@@ -16,11 +16,8 @@ library(jsonlite)
 library(tidyverse)
 
 # Read in species datatable from nabat
-# setwd(sourceDir)
-# source("../Examples/data/bat_species_table.csv")
-# species_df = read_csv("../Examples/data/bat_species_table.csv")
-# species = species_df$species_code[1:53]
-# species
+species_df = read_csv("data/bat_species_table.csv")
+species = species_df$species_code[1:53]
 
 #' @title NABat Build Acoustic Observed Nights Function
 #'
