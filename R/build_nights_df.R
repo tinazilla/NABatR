@@ -17,7 +17,7 @@ library(tidyverse)
 
 
 # Read in species datatable from nabat
-species_df = read_csv(paste0(project_location, './Examples/data/bat_species_table.csv'))
+species_df = read_csv("../Examples/data/bat_species_table.csv")
 species = species_df$species_code[1:53]
 species
 
