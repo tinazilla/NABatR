@@ -51,7 +51,6 @@ ex_grts_df
 ```
 
 change dates to their corresponding night instead of full date time
-
 ```{r}
 ex_grts_df$Survey_Start = as.Date(ex_grts_df$Survey_Start)
 ex_grts_df$Survey_End = as.Date(ex_grts_df$Survey_End)
@@ -88,6 +87,127 @@ for (x in c(1:length(survey_dates))){
     project_data = rbind(project_data,night_row)
   }
 }
+
 project_data
 ```
+
+
+
+# Functions for above code
+
+Convert the project data extracted using query_nabat_gql and rename_raw_acoustic into Manual and Automatic
+0/1 data for all species
+```{r}
+
+build_nights_df = function(acoustic_data,
+                           out_file,
+                           acoustic_type){
+  
+  nights_df = data.frame()
+  project_id = unique(acoustic_data$Project_ID)
+  # Extract all GRTS Cell ids within acoustic_data
+  GRTS_ids = unique(acoustic_data$GRTS_Cell_ID)
+  
+  for (id in GRTS_ids){
+    print (paste0('id: ',id))
+    
+    ex_grts_df = subset(acoustic_data, acoustic_data$GRTS_Cell_ID == id) %>%
+      select(GRTS_Cell_ID, Survey_Start, Survey_End, Audio_Recording_Name, Auto_ID, Manual_ID)
+    
+    # Replace Unconfirmed with NoID in Auto Id field
+    ex_grts_df$Auto_ID = as.character(ex_grts_df$Auto_ID)
+    ex_grts_df$Auto_ID[is.na(ex_grts_df$Auto_ID)] = "NoID"
+    
+    # Replace Unconfirmed with NoID in Manual Id field
+    ex_grts_df$Manual_ID = as.character(ex_grts_df$Manual_ID)
+    ex_grts_df$Manual_ID[is.na(ex_grts_df$Manual_ID)] = "NoID"
+    
+    # Edit dates
+    ex_grts_df$Survey_Start = as.Date(ex_grts_df$Survey_Start)
+    ex_grts_df$Survey_End = as.Date(ex_grts_df$Survey_End)
+    
+    print (paste0('number of entries: ',dim(ex_grts_df)[1]))
+    
+    survey_dates = unique(ex_grts_df$Survey_Start)
+    
+    
+    project_data = data.frame()
+    
+    for (x in c(1:length(survey_dates))){
+      date = survey_dates[x]
+      print (date)
+      night_row = data.frame(Project_ID   = project_id)
+      night_row$GRTS_Cell_ID = id
+      night_row$Observed_Night = date
+      # display number of records for this night
+      print (dim(subset(ex_grts_df, ex_grts_df$Survey_Start == date))[1])
+      # find all species present and then add them all together
+      night_data = subset(ex_grts_df, ex_grts_df$Survey_Start == date)
+      
+      # Adding number of species at each night and adding it to the row
+      for (s in species){
+        if (acoustic_type == 'auto'){
+          species_count = dim(subset(night_data, night_data$Auto_ID == s))[1]
+        }else if (acoustic_type == 'manual'){
+          species_count = dim(subset(night_data, night_data$Manual_ID == s))[1]
+        }
+        night_row[,s] = species_count
+      }
+      
+      # bind this row for this date to final dataframe
+      if (dim(project_data)[1]==0){
+        project_data = night_row
+      }else{
+        project_data = rbind(project_data,night_row)
+      }
+    }
+    
+    if (dim(nights_df)[1] == 0){
+      print ('start over')
+      nights_df = project_data
+    }else{
+      print('after')
+      nights_df = rbind(nights_df, project_data)
+    }
+  }
+  write_csv(nights_df, out_file)
+  return (nights_df)
+}
+
+n_df = build_nights_df(acoustic_data = acoustic_project,
+                       out_file      = './downloads/Observed_Nights_Acoustic.csv',
+                       acoustic_type = 'manual')
+
+n_df
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
