@@ -26,7 +26,6 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 library(DT)
-library(httr)
 
 # Token generated from the USGS notebook in NABatProcessingScripts/Python/notebooks/ConnectToGQL.ipynb
 #   - See chs gitlab
@@ -327,7 +326,6 @@ rename_raw_acoustic = function(raw_data,
 }
 
 acoustic_data = rename_raw_acoustic(raw_data, './downloads/Stationary_Acoustic.csv')
-
 ```
 
 
