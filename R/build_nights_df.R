@@ -32,6 +32,7 @@ species = species_df$species_code[1:53]
 #' @param out_file String to write the new data.frame out as. ex: '/path/to/downloads/Observed_Nights_Acoustic_Auto.csv'
 #' @param acoustic_type String that can either be 'manual' or 'auto'
 #' @keywords bats, NABat, GQL, Acoustic, Stationary, Data, Automatic, Manual, Software
+#'
 #' @export
 build_nights_df = function(acoustic_data,
                            out_file,

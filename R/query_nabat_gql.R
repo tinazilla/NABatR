@@ -35,6 +35,7 @@ library(DT)
 #' @param project_id Integer to use as an identifier for the project in NABat.
 #' @param out_file String to write the CSV out to.  ex: '/path/to/downloads/Raw_Acoustic_GQL.csv'
 #' @keywords bats, NABat, GQL, Acoustic, Stationary
+#'
 #' @export
 query_nabat_gql = function(token,
                            user_name,

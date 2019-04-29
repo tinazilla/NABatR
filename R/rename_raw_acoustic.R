@@ -29,6 +29,7 @@ library(DT)
 #' @param raw_data data.frame to use in header to access GraphicalQL.
 #' @param out_file String to write the CSV out to.  ex: '/path/to/downloads/Stationary_Acoustic_GQL.csv'
 #' @keywords bats, NABat, Acoustic, Stationary, data
+#'
 #' @export
 
 rename_raw_acoustic = function(raw_data,
