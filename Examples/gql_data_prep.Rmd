@@ -1,0 +1,93 @@
+---
+title: "gql_data_prep"
+author: "Kyle"
+date: "4/26/2019"
+output: html_document
+---
+
+## Similar process to nabat_data_prep but uses a dataframe created through GraphicQL string Query
+
+
+### Now we want to grab 1 GRTS_Cell_ID and massage the subset of the main project dataframe
+###   so that we can import it into the WSMR project report.
+
+Read in the project csv
+```{r}
+library(jsonlite)
+library(tidyverse)
+
+# Change this to the location of your project
+project_location = '/Path/To/Project/NABatR'
+
+# Read in species datatable from nabat
+species_df = read_csv(paste0(project_location, '/Examples/data/bat_species_table.csv'))
+species = species_df$species_code[1:53]
+species
+
+# Same location as the out_file from gql_query.Rmd
+file_name = paste0(project_location, '/Examples/data/Stationary_Acoustic.csv')
+acoustic_project = read_csv(file_name)
+acoustic_project
+```
+
+Subset one GRTS cell of data to use for testing
+```{r}
+#Subset from GRTS_Cell_ID
+unique(acoustic_project$GRTS_Cell_ID)
+ex_grts_df = subset(acoustic_project, acoustic_project$GRTS_Cell_ID == 2493) %>%
+  select(GRTS_Cell_ID, Survey_Start, Survey_End, Audio_Recording_Name, Auto_ID, Manual_ID)
+ex_grts_df
+```
+
+Rename NA values at Auto_ID and Manual_ID fields to 'NoID'
+```{r}
+# Replace Unconfirmed with NoID in Auto Id field
+ex_grts_df$Auto_ID = as.character(ex_grts_df$Auto_ID)
+ex_grts_df$Auto_ID[is.na(ex_grts_df$Auto_ID)] = "NoID"
+# Replace Unconfirmed with NoID in Manual Id field
+ex_grts_df$Manual_ID = as.character(ex_grts_df$Manual_ID)
+ex_grts_df$Manual_ID[is.na(ex_grts_df$Manual_ID)] = "NoID"
+ex_grts_df
+```
+
+change dates to their corresponding night instead of full date time
+
+```{r}
+ex_grts_df$Survey_Start = as.Date(ex_grts_df$Survey_Start)
+ex_grts_df$Survey_End = as.Date(ex_grts_df$Survey_End)
+ex_grts_df
+```
+
+```{r}
+survey_dates = unique(ex_grts_df$Survey_Start)
+survey_dates
+```
+
+```{r}
+project_data = data.frame()
+
+for (x in c(1:length(survey_dates))){
+  date = survey_dates[x]
+  print (date)
+  night_row = data.frame(night = date)
+  # display number of records for this night
+  print (dim(subset(ex_grts_df, ex_grts_df$Survey_Start == date))[1])
+  # find all species present and then add them all together
+  night_data = subset(ex_grts_df, ex_grts_df$Survey_Start == date)
+  
+  for (s in species){
+    species_count = dim(subset(night_data, night_data$Auto_ID == s))[1]
+    night_row[,s] = species_count
+  }
+  
+  # bind this row for this date to final dataframe
+  if (length(project_data)==0){
+    project_data = night_row
+    print ('yeah')
+  }else{
+    project_data = rbind(project_data,night_row)
+  }
+}
+project_data
+```
+

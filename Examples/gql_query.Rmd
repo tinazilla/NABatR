@@ -1,0 +1,185 @@
+---
+title: "gql_query"
+author: "Kyle"
+date: "4/26/2019"
+output: html_document
+---
+
+### Use a string query to pull desired data for any given project from the NABat Database
+
+Set directoies to save out data and point to NABatR repo locally
+```{r}
+# Change this to the location of your project
+project_location = '/Path/To/Project/NABatR'
+
+# Raw acoustic data from gql saved out
+raw_out_file = paste0(project_location,'/Examples/data/Raw_Accoustic_GQL.csv')
+
+# Clean data output file name
+out_file = paste0(project_location, '/Examples/data/Stationary_Acoustic.csv')
+```
+
+Import packages, set token, and create a header for the graphql query
+```{r}
+library(ghql)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(DT)
+library(httr)
+
+# Token generated from the USGS notebook in NABatProcessingScripts/Python/notebooks/ConnectToGQL.ipynb
+#   - See chs gitlab
+token = ''
+# email address
+username = ''
+
+rm(cli)
+cli <- GraphqlClient$new(
+  url = 'https://api.sciencebase.gov/nabatmonitoring-survey/graphql',
+  headers = add_headers(.headers = c(Authorization = paste0('Bearer ', token),
+                          'X-email-address' = username
+                          )))
+```
+
+Create and subit query to GQL api
+```{r}
+qry <- Query$new()
+# 209 and 33 (test projects for nabat)
+qry$query('counts', '{
+  allSurveys (filter :{projectId:{equalTo:33}}){
+    nodes{
+      projectId
+      grtsId
+      stationaryAcousticEventsBySurveyId {
+        nodes{
+          id
+          location
+          surveyId
+          activationStartTime
+          activationEndTime
+          deviceByDeviceId{
+            deviceTypeByDeviceTypeId{
+              manufacturer
+              model
+            }
+          }
+          microphoneByMicrophoneId{
+            microphoneTypeByMicrophoneTypeId{
+              model
+              manufacturer
+            }
+          }
+          microphoneOrientationByMicrophoneOrientationId{
+            shortName
+          }
+          microphoneHeight
+          distanceToClutterMeters
+          clutterTypeByClutterTypeId{
+            description
+          }
+          distanceToWater
+          waterType
+          percentClutterMethod
+          habitatTypeByHabitatTypeId{
+            description
+          }
+          stationaryAcousticValuesBySaSurveyId{
+            nodes{
+              wavFileName
+              softwareBySoftwareId{
+                name
+                versionNumber
+              }
+              speciesBySpeciesId{
+                speciesCode
+              }
+              speciesByManualId{
+                speciesCode
+              }
+              }
+            } 
+          }
+        }
+      }
+    }
+}')
+
+qry$queries$counts
+
+ac_dat <- cli$exec(qry$queries$counts)
+ac_df <- fromJSON(ac_dat, flatten = TRUE)
+ac_df
+```
+
+
+
+```{r}
+# Temporary dataframe that has the project ID and grts ID and the associated Dataframe with
+tmp_df = data.frame(ac_df$data$allSurveys$nodes)
+tmp_df_len = dim(tmp_df)[1]
+
+# Removing fields we don't want
+raw_df = as_tibble(tmp_df) %>% unnest() %>% unnest %>% as.data.frame() %>% 
+  subset(select= -c(speciesBySpeciesId, speciesByManualId, habitatTypeByHabitatTypeId, deviceByDeviceId))
+names(raw_df)
+raw_df
+
+```
+
+
+Save out raw_df as a csv
+```{r}
+write_csv(raw_df, raw_out_file)
+raw_df1 = read_csv (raw_out_file)
+raw_df1
+length(unique(raw_df1$wavFileName))
+```
+
+
+
+####  - Edit dataframe to match fields from Bulk_Stationary_Acoustic_template (from nabat website)
+```{r}
+renaming_df = raw_df1
+names(renaming_df)[names(renaming_df) == 'projectId'] = 'Project_ID'
+names(renaming_df)[names(renaming_df) == 'grtsId'] = 'GRTS_Cell_ID'
+names(renaming_df)[names(renaming_df) == 'id'] = 'Stationary_Acoustic_Values_ID'
+names(renaming_df)[names(renaming_df) == 'location'] = 'Location_Name'
+names(renaming_df)[names(renaming_df) == 'surveyId'] = 'Survey_ID'
+names(renaming_df)[names(renaming_df) == 'activationStartTime'] = 'Survey_Start'
+names(renaming_df)[names(renaming_df) == 'activationEndTime'] = 'Survey_End'
+names(renaming_df)[names(renaming_df) == 'microphoneOrientationByMicrophoneOrientationId'] = 'Microphone_Orientation'
+names(renaming_df)[names(renaming_df) == 'microphoneHeight'] = 'Microphone_Height'
+names(renaming_df)[names(renaming_df) == 'distanceToClutterMeters'] = 'Distance_to_Nearest_Clutter'
+names(renaming_df)[names(renaming_df) == 'distanceToWater'] = 'Distance_to_Nearest_Water'
+names(renaming_df)[names(renaming_df) == 'waterType'] = 'Water_Type'
+names(renaming_df)[names(renaming_df) == 'percentClutterMethod'] = 'Percent_Clutter'
+names(renaming_df)[names(renaming_df) == 'deviceByDeviceId.deviceTypeByDeviceTypeId.manufacturer'] = 'Device_Manufacturer'
+names(renaming_df)[names(renaming_df) == 'deviceByDeviceId.deviceTypeByDeviceTypeId.model'] = 'Device_Model'
+names(renaming_df)[names(renaming_df) == 'microphoneByMicrophoneId.microphoneTypeByMicrophoneTypeId.model'] = 'Microphone_Model'
+names(renaming_df)[names(renaming_df) == 'microphoneByMicrophoneId.microphoneTypeByMicrophoneTypeId.manufacturer'] = 'Microphone_Manufacturer'
+names(renaming_df)[names(renaming_df) == 'clutterTypeByClutterTypeId.description'] = 'Clutter_Type'
+names(renaming_df)[names(renaming_df) == 'habitatTypeByHabitatTypeId.description'] = 'Broad_Habitat_Type'
+names(renaming_df)[names(renaming_df) == 'wavFileName'] = 'Audio_Recording_Name'
+names(renaming_df)[names(renaming_df) == 'softwareBySoftwareId.name'] = 'Software_Name'
+names(renaming_df)[names(renaming_df) == 'softwareBySoftwareId.versionNumber'] = 'Software_Version'
+names(renaming_df)[names(renaming_df) == 'speciesBySpeciesId.speciesCode'] = 'Auto_ID'
+names(renaming_df)[names(renaming_df) == 'speciesByManualId.speciesCode'] = 'Manual_ID'
+
+renaming_df
+```
+
+
+### Write out a csv that we composes all of the project's acoustic data
+Reorder the fields so they best match the acoustic template csv from nabat website
+```{r}
+print (length(names(renaming_df)))
+reordered_df = renaming_df[, c(2,1,4,3,5,6,7,8,9,10,
+                               11,12,13,14,15,16,17,
+                               18,19,20,21,22,23,24,
+                               25,26)]
+reordered_df
+write_csv(reordered_df, out_file)
+```
+
+
