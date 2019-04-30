@@ -31,16 +31,17 @@ library(DT)
 #' Stationary Acoustic Data for a single project id. Note: hits 'Production' database with GQL.
 #'
 #' @param token String to use in header to access GraphicalQL.
-#' @param user_name String to use in header to access GraphicalQL.
+#' @param username String to use in header to access GraphicalQL.
 #' @param project_id Integer to use as an identifier for the project in NABat.
 #' @param out_file String to write the CSV out to.  ex: '/path/to/downloads/Raw_Acoustic_GQL.csv'
 #' @keywords bats, NABat, GQL, Acoustic, Stationary
 #'
 #' @export
 query_nabat_gql = function(token,
-                           user_name,
+                           username,
                            project_id,
                            out_file){
+
 
   cli <- GraphqlClient$new(
     url = 'https://api.sciencebase.gov/nabatmonitoring-survey/graphql',
