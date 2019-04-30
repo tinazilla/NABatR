@@ -49,6 +49,8 @@ query_nabat_gql = function(token,
                                        'X-email-address' = username
     )))
 
+  project_id = as.character(project_id)
+
   qry <- Query$new()
   qry$query('counts', paste0('{
   allSurveys (filter :{projectId:{equalTo:',project_id,'}}){
@@ -113,7 +115,6 @@ query_nabat_gql = function(token,
 
   ac_dat = cli$exec(qry$queries$counts)
   ac_df  = fromJSON(ac_dat, flatten = TRUE)
-  ac_df
 
   # Temporary dataframe that has the project ID and grts ID and the associated Dataframe with
   tmp_df = data.frame(ac_df$data$allSurveys$nodes)
@@ -121,11 +122,11 @@ query_nabat_gql = function(token,
 
   # Removing fields we don't want
   raw_df = as_tibble(tmp_df) %>% unnest() %>% unnest %>% as.data.frame() %>%
-    subset(select= -c(speciesBySpeciesId, speciesByManualId, habitatTypeByHabitatTypeId, deviceByDeviceId))
+    subset(select= -c(speciesBySpeciesId, speciesByManualId, habitatTypeByHabitatTypeId))
 
   # Write out raw data csv
   write_csv(raw_df, out_file)
-  raw_df1 = read_csv(raw_out_file)
+  raw_df1 = read_csv(out_file)
   # read_csv uses desired field types to return
   return (raw_df1)
 }

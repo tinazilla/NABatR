@@ -63,8 +63,7 @@ rename_raw_acoustic = function(raw_data,
 
   reordered_df = renaming_df[, c(2,1,4,3,5,6,7,8,9,10,
                                  11,12,13,14,15,16,17,
-                                 18,19,20,21,22,23,24,
-                                 25,26)]
+                                 18,19,20,21,22,23,24)]
   write_csv(reordered_df, out_file)
   return (reordered_df)
 }
