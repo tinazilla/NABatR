@@ -39,52 +39,44 @@ build_nights_df = function(acoustic_data,
                            acoustic_type){
 
   nights_df = data.frame()
-  project_id = unique(acoustic_data$Project_ID)
+  project_id = unique(acoustic_data$project_id)
   # Extract all GRTS Cell ids within acoustic_data
-  GRTS_ids = unique(acoustic_data$GRTS_Cell_ID)
+  GRTS_ids = unique(acoustic_data$grts_cell_id)
 
   for (id in GRTS_ids){
-    print (paste0('id: ',id))
-
-    ex_grts_df = subset(acoustic_data, acoustic_data$GRTS_Cell_ID == id) %>%
-      select(GRTS_Cell_ID, Survey_Start, Survey_End, Audio_Recording_Name, Auto_ID, Manual_ID)
+    ex_grts_df = subset(acoustic_data, acoustic_data$grts_cell_id == id) %>%
+      select(grts_cell_id, survey_start, survey_end, audio_recording_name, auto_id, manual_id)
 
     # Replace Unconfirmed with NoID in Auto Id field
-    ex_grts_df$Auto_ID = as.character(ex_grts_df$Auto_ID)
-    ex_grts_df$Auto_ID[is.na(ex_grts_df$Auto_ID)] = "NoID"
+    ex_grts_df$auto_id = as.character(ex_grts_df$auto_id)
+    ex_grts_df$auto_id[is.na(ex_grts_df$auto_id)] = "NoID"
 
     # Replace Unconfirmed with NoID in Manual Id field
-    ex_grts_df$Manual_ID = as.character(ex_grts_df$Manual_ID)
-    ex_grts_df$Manual_ID[is.na(ex_grts_df$Manual_ID)] = "NoID"
+    ex_grts_df$manual_id = as.character(ex_grts_df$manual_id)
+    ex_grts_df$manual_id[is.na(ex_grts_df$manual_id)] = "NoID"
 
     # Edit dates
-    ex_grts_df$Survey_Start = as.Date(ex_grts_df$Survey_Start)
-    ex_grts_df$Survey_End = as.Date(ex_grts_df$Survey_End)
+    ex_grts_df$survey_start = as.Date(ex_grts_df$survey_start)
+    ex_grts_df$survey_end = as.Date(ex_grts_df$survey_end)
 
-    print (paste0('number of entries: ',dim(ex_grts_df)[1]))
-
-    survey_dates = unique(ex_grts_df$Survey_Start)
-
+    survey_dates = unique(ex_grts_df$survey_start)
 
     project_data = data.frame()
 
     for (x in c(1:length(survey_dates))){
       date = survey_dates[x]
-      print (date)
-      night_row = data.frame(Project_ID   = project_id)
-      night_row$GRTS_Cell_ID = id
-      night_row$Observed_Night = date
-      # display number of records for this night
-      print (dim(subset(ex_grts_df, ex_grts_df$Survey_Start == date))[1])
+      night_row = data.frame(project_id = project_id)
+      night_row$grts_cell_id = id
+      night_row$observed_night = date
       # find all species present and then add them all together
-      night_data = subset(ex_grts_df, ex_grts_df$Survey_Start == date)
+      night_data = subset(ex_grts_df, ex_grts_df$survey_start == date)
 
       # Adding number of species at each night and adding it to the row
       for (s in species){
         if (acoustic_type == 'auto'){
-          species_count = dim(subset(night_data, night_data$Auto_ID == s))[1]
+          species_count = dim(subset(night_data, night_data$auto_id == s))[1]
         }else if (acoustic_type == 'manual'){
-          species_count = dim(subset(night_data, night_data$Manual_ID == s))[1]
+          species_count = dim(subset(night_data, night_data$manual_id == s))[1]
         }
         night_row[,s] = species_count
       }
@@ -98,10 +90,8 @@ build_nights_df = function(acoustic_data,
     }
 
     if (dim(nights_df)[1] == 0){
-      print ('start over')
       nights_df = project_data
     }else{
-      print('after')
       nights_df = rbind(nights_df, project_data)
     }
   }

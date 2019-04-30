@@ -60,7 +60,7 @@ query_nabat_gql = function(token,
       stationaryAcousticEventsBySurveyId {
         nodes{
           id
-          location
+          locationName
           surveyId
           activationStartTime
           activationEndTime
